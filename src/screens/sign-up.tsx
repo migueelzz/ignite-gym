@@ -5,6 +5,7 @@ import {
   Text,
   Heading,
   ScrollView,
+  useToast,
 } from "@gluestack-ui/themed";
 
 import BackgroundImg from "@assets/background.png";
@@ -15,6 +16,12 @@ import { useNavigation } from "@react-navigation/native";
 import { Controller, useForm } from "react-hook-form";
 import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { api } from "../http/api";
+import axios from 'axios'
+import { Alert } from "react-native";
+import { AppError } from "@utils/error";
+import { ToastMessage } from "@components/toast-message";
+import { AuthNavigatorRoutesProps } from "@routes/auth.routes";
 
 const signUpSchema = yup.object({
   name: yup.string().required('Informe o nome.'),
@@ -26,22 +33,45 @@ const signUpSchema = yup.object({
 type FormDataProps = yup.InferType<typeof signUpSchema>
 
 export function SignUp() {
+  const toast = useToast()
+
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { isSubmitting, errors },
   } = useForm<FormDataProps>({
     resolver: yupResolver(signUpSchema)
   });
 
-  const navigation = useNavigation();
+  const navigation = useNavigation<AuthNavigatorRoutesProps>();
 
   function handleGoBack() {
     navigation.goBack();
   }
 
-  function handleSignUp(data: FormDataProps) {
-    console.log(data);
+  async function handleSignUp({ name, email, password }: FormDataProps) {
+    try {
+      const response = await api.post('/users', { name, email, password })
+  
+      console.log(response.data)
+
+      navigation.navigate("signIn")
+    } catch (err) {
+      const isAppError = err instanceof AppError
+      const title = isAppError ? err.message : 'Não foi possível criar a conta. Tente novamente mais tarde!'
+
+      toast.show({
+        placement: "top",
+        render: ({ id }) => (
+          <ToastMessage
+            id={id}
+            action="error"
+            title={title}
+            onClose={() => toast.close(id)}
+          />
+        ),
+      });
+    }
   }
 
   return (
@@ -125,7 +155,11 @@ export function SignUp() {
               )}
             />
 
-            <Button title="Cadastrar" onPress={handleSubmit(handleSignUp)} />
+            <Button 
+              title="Cadastrar" 
+              onPress={handleSubmit(handleSignUp)} 
+              isLoading={isSubmitting}
+            />
           </Center>
 
           <Button
