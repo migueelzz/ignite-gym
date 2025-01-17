@@ -1,6 +1,8 @@
 import { UserDTO } from "@dtos/user-dto";
 import { createContext, ReactNode, useEffect, useState } from "react";
 import { api } from "../http/api";
+
+import { storageAuthTokenSave, storageAuthTokenGet, storageAuthTokenRemove } from '@storage/storage-auth-token'
 import { storageUserSave, storageUserGet, storageUserRemove } from "@storage/storage-user";
 
 export type AuthContextDataProps = {
@@ -14,18 +16,30 @@ export const AuthContext = createContext<AuthContextDataProps>({} as AuthContext
 
 export function AuthContextProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserDTO>({} as UserDTO)
+
   const [isLoadingUserStorageData, setIsLoadingUserStorageData] = useState(true)
+
+  async function updateUserAndToken(user: UserDTO, token: string) {
+    api.defaults.headers.common['Authorization'] = `Baerer ${token}`
+    setUser(user)
+  }
 
   async function signIn(email: string, password: string) {
     try {
       const { data } = await api.post('/sessions', { email, password })
   
       if (data.user && data.token) {
-        setUser(data.user)
-        storageUserSave(data.user)
+        setIsLoadingUserStorageData(true)
+
+        await storageUserSave(data.user)
+        await storageAuthTokenSave(data.token)
+
+        updateUserAndToken(data.user, data.token)
       }
     } catch (err) {
       throw err 
+    } finally {
+      setIsLoadingUserStorageData(false)
     }
   }
 
@@ -34,6 +48,7 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
       setIsLoadingUserStorageData(true)
       setUser({} as UserDTO)
       await storageUserRemove()
+      await storageAuthTokenRemove()
     } catch (err) {
       throw err
     } finally {
@@ -44,9 +59,10 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
   async function loadUserData() {
     try {
       const userLogged = await storageUserGet()
+      const token = await storageAuthTokenGet()
 
-      if (userLogged) {
-        setUser(userLogged)
+      if (token && userLogged) {
+        updateUserAndToken(userLogged, token)
       }
     } catch (err) {
       throw err

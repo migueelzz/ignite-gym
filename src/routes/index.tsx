@@ -12,6 +12,8 @@ export function Routes() {
   const theme = DefaultTheme
   theme.colors.background = "$gray700" // ou gluestackUIConfig.tokens.colors.gray700
 
+  console.log(user)
+
   if (isLoadingUserStorageData) {
     return <Loading />
   }
