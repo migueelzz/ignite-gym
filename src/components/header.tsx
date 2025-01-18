@@ -6,6 +6,7 @@ import defaultAvatarUser from '@assets/userPhotoDefault.png'
 
 import { useAuth } from "@hooks/use-auth";
 import { TouchableOpacity } from "react-native";
+import { api } from "../http/api";
 
 export function Header() {
   const { user, signOut } = useAuth()
@@ -13,7 +14,7 @@ export function Header() {
   return (
     <HStack bg="$gray600" pt="$16" pb="$5" px="$8" alignItems="center" gap="$4">
       <Avatar 
-        source={user.avatar ? { uri: user.avatar } : defaultAvatarUser} 
+        source={user.avatar ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` } : defaultAvatarUser} 
         w="$16"
         h="$16"
         alt="Foto de perfil do usuário"

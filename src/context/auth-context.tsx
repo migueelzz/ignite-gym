@@ -10,6 +10,7 @@ export type AuthContextDataProps = {
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   isLoadingUserStorageData: boolean
+  updateUserProfile: (userUpdated: UserDTO) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextDataProps>({} as AuthContextDataProps)
@@ -28,11 +29,11 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     try {
       const { data } = await api.post('/sessions', { email, password })
   
-      if (data.user && data.token) {
+      if (data.user && data.token && data.refresh_token) {
         setIsLoadingUserStorageData(true)
 
         await storageUserSave(data.user)
-        await storageAuthTokenSave(data.token)
+        await storageAuthTokenSave(data.token, data.refresh_token)
 
         updateUserAndToken(data.user, data.token)
       }
@@ -56,10 +57,19 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function updateUserProfile(userUpdated: UserDTO) {
+    try {
+      setUser(userUpdated)
+      await storageUserSave(userUpdated)
+    } catch(err) {
+      throw err
+    }
+  }
+
   async function loadUserData() {
     try {
       const userLogged = await storageUserGet()
-      const token = await storageAuthTokenGet()
+      const { token } = await storageAuthTokenGet()
 
       if (token && userLogged) {
         updateUserAndToken(userLogged, token)
@@ -75,8 +85,16 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
     loadUserData()
   }, [])
 
+  useEffect(() => {
+    const subscribe = api.registerInterceptTokenManager(signOut)
+
+    return () => {
+      subscribe()
+    }
+  }, [signOut])
+
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, isLoadingUserStorageData }}>
+    <AuthContext.Provider value={{ user, signIn, signOut, isLoadingUserStorageData, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   )
