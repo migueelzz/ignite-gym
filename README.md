@@ -1,10 +1,12 @@
 # Ignite Gym
 
 ## Sobre
+Esta projeto foi desenvolvido na Trilha de React Native da Rocketseat. 
+Aplicação para academias com o objetivo de gerenciar os exercícios realizados pelos usuários.
 
-Esta é uma aplicação para academias com o objetivo de gerenciar os exercícios realizados pelos usuários.
+https://github.com/user-attachments/assets/bc4b88c8-b5df-4f06-9887-34058656bd8b
 
-Aprendizados:
+## Aprendizados:
 - [x] Utilização de contextos no React Native
 - [x] Salvamento de dados no dispositivo local
 - [x] Integração com backend utilizando Axios
@@ -17,3 +19,4 @@ Aprendizados:
 - Expo
 - React Navigation
 - GlueStack UI
+
